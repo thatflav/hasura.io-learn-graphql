@@ -1,43 +1,44 @@
-import React, { Fragment } from "react";
+import React, { Fragment } from 'react';
+import { useSubscription, gql } from '@apollo/client';
 
-import TaskItem from "./TaskItem";
+import TaskItem from './TaskItem';
 
-const TodoPublicList = props => {
+const TodoPublicList = (props) => {
   const state = {
     olderTodosAvailable: true,
     newTodosCount: 1,
     todos: [
       {
-        id: "1",
-        title: "This is public todo 1",
+        id: '1',
+        title: 'This is public todo 1',
         user: {
-          name: "someUser1"
-        }
+          name: 'someUser1',
+        },
       },
       {
-        id: "2",
-        title: "This is public todo 2",
+        id: '2',
+        title: 'This is public todo 2',
         is_completed: false,
         is_public: true,
         user: {
-          name: "someUser2"
-        }
+          name: 'someUser2',
+        },
       },
       {
-        id: "3",
-        title: "This is public todo 3",
+        id: '3',
+        title: 'This is public todo 3',
         user: {
-          name: "someUser3"
-        }
+          name: 'someUser3',
+        },
       },
       {
-        id: "4",
-        title: "This is public todo 4",
+        id: '4',
+        title: 'This is public todo 4',
         user: {
-          name: "someUser4"
-        }
-      }
-    ]
+          name: 'someUser4',
+        },
+      },
+    ],
   };
 
   const loadNew = () => {};
@@ -54,18 +55,18 @@ const TodoPublicList = props => {
     </ul>
   );
 
-  let newTodosNotification = "";
+  let newTodosNotification = '';
   if (state.newTodosCount) {
     newTodosNotification = (
-      <div className={"loadMoreSection"} onClick={loadNew}>
+      <div className={'loadMoreSection'} onClick={loadNew}>
         New tasks have arrived! ({state.newTodosCount.toString()})
       </div>
     );
   }
 
   const olderTodosMsg = (
-    <div className={"loadMoreSection"} onClick={loadOlder}>
-      {state.olderTodosAvailable ? "Load older tasks" : "No more public tasks!"}
+    <div className={'loadMoreSection'} onClick={loadOlder}>
+      {state.olderTodosAvailable ? 'Load older tasks' : 'No more public tasks!'}
     </div>
   );
 
@@ -82,4 +83,31 @@ const TodoPublicList = props => {
   );
 };
 
-export default TodoPublicList;
+// Run a subscription to get the latest public todo
+const NOTIFY_NEW_PUBLIC_TODOS = gql`
+  subscription notifyNewPublicTodos {
+    todos(
+      where: { is_public: { _eq: true } }
+      limit: 1
+      order_by: { created_at: desc }
+    ) {
+      id
+      created_at
+    }
+  }
+`;
+
+const TodoPublicListSubscription = () => {
+  const { loading, error, data } = useSubscription(NOTIFY_NEW_PUBLIC_TODOS);
+  if (loading) {
+    return <span>Loading...</span>;
+  }
+  if (error) {
+    return <span>Error</span>;
+  }
+  return (
+    <TodoPublicList latestTodo={data.todos.length ? data.todos[0] : null} />
+  );
+};
+
+export default TodoPublicListSubscription;
